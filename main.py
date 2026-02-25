@@ -29,10 +29,10 @@ dashboard_app = create_dashboard_app(lifespan=lifespan)
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 5000))
     uvicorn.run(
         "main:dashboard_app",
         host="0.0.0.0",
         port=port,
-        reload=port == 8000,
+        reload=False,
     )

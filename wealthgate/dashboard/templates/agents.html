@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Agent Sessions — Wealthgate{% endblock %}
+{% block nav_agents %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Agent Sessions</h1>
+    <p class="subtitle">Connected AI agents and their activity</p>
+</div>
+
+{% if sessions %}
+<div class="agents-grid">
+    {% for session in sessions %}
+    <div class="card agent-card">
+        <div class="agent-header">
+            <h3>{{ session.agent_name }}</h3>
+            <span class="agent-id mono">{{ session.agent_id }}</span>
+        </div>
+        <div class="agent-meta">
+            <div class="meta-row">
+                <span class="meta-label">Session</span>
+                <span class="mono">{{ session.id }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Connected</span>
+                <span>{{ session.connected_at[:19] | replace('T', ' ') }} UTC</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Last Activity</span>
+                <span>{{ session.last_activity[:19] | replace('T', ' ') }} UTC</span>
+            </div>
+        </div>
+        <div class="agent-stats">
+            <div class="agent-stat">
+                <span class="agent-stat-value">{{ session.operations_count }}</span>
+                <span class="agent-stat-label">Operations</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value tier-1-text">{{ session.tier1_count }}</span>
+                <span class="agent-stat-label">Tier 1</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value tier-2-text">{{ session.tier2_count }}</span>
+                <span class="agent-stat-label">Tier 2</span>
+            </div>
+            <div class="agent-stat">
+                <span class="agent-stat-value tier-3-text">{{ session.tier3_count }}</span>
+                <span class="agent-stat-label">Tier 3</span>
+            </div>
+            <div class="agent-stat">
+                {% if session.blocked_count > 0 %}
+                <span class="agent-stat-value tier-4-text">{{ session.blocked_count }}</span>
+                {% else %}
+                <span class="agent-stat-value">0</span>
+                {% endif %}
+                <span class="agent-stat-label">Blocked</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h2>No Agent Sessions</h2>
+    <p>Agent sessions will appear here when AI agents connect via MCP.</p>
+</div>
+{% endif %}
+{% endblock %}

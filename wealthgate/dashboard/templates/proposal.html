@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}{{ proposal.id }} — Wealthgate{% endblock %}
+{% block nav_queue %}active{% endblock %}
+
+{% block content %}
+<div class="proposal-detail">
+    <a href="/dashboard" class="back-link">&larr; Back to AI Agent Orders</a>
+
+    <!-- Section 1: Header -->
+    <div class="proposal-header">
+        <div class="proposal-header-top">
+            <h1 class="mono">{{ proposal.id }}</h1>
+            <span class="status-pill {{ status_class(proposal.status) }} status-large">{{ proposal.status | capitalize }}</span>
+        </div>
+        <div class="proposal-meta">
+            <span class="meta-item">
+                <span class="meta-label">Agent</span>
+                {{ proposal.agent_name }}
+            </span>
+            <span class="meta-item">
+                <span class="meta-label">Account</span>
+                <span class="mono">{{ proposal.account_id }}</span>
+            </span>
+            <span class="meta-item">
+                <span class="meta-label">Created</span>
+                {{ proposal.created_at[:19] | replace('T', ' ') }} UTC
+            </span>
+            <span class="meta-item">
+                <span class="tier-badge tier-{{ proposal.tier }}">{{ tier_label(proposal.tier) }}</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Section 2: Trade Details -->
+    <div class="card">
+        <h2>Trade Details</h2>
+        {% if proposal.type == "rebalance" and proposal.trades %}
+        <table class="data-table compact">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Symbol</th>
+                    <th>Units</th>
+                    <th>Est. Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in proposal.trades %}
+                <tr>
+                    <td>
+                        <span class="action-pill action-{{ trade.action }}">{{ trade.action | capitalize }}</span>
+                    </td>
+                    <td>{{ symbol_with_name(trade.symbol) }}</td>
+                    <td>{{ trade.units }}</td>
+                    <td>{{ trade.est_value | format_value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="trade-total">
+            <strong>Total Estimated Value:</strong> {{ proposal.estimated_value | format_value }}
+        </div>
+        {% elif proposal.type == "withdrawal" %}
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Operation</span>
+                <span class="detail-value">Withdrawal</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Amount</span>
+                <span class="detail-value">{{ proposal.estimated_value | format_value }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Action</span>
+                <span class="detail-value">
+                    <span class="action-pill action-{{ proposal.action }}">{{ proposal.action | capitalize }}</span>
+                </span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Symbol</span>
+                <span class="detail-value">{{ symbol_with_name(proposal.symbol) }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Units</span>
+                <span class="detail-value">{{ proposal.units }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Estimated Value</span>
+                <span class="detail-value">{{ proposal.estimated_value | format_value }}</span>
+            </div>
+            {% if proposal.execution_price %}
+            <div class="detail-item">
+                <span class="detail-label">Execution Price</span>
+                <span class="detail-value">{{ proposal.execution_price | format_value }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Section 3: Agent Reasoning -->
+    <div class="card">
+        <h2>Agent Reasoning</h2>
+        <blockquote class="reasoning-block">
+            {{ proposal.reasoning }}
+        </blockquote>
+    </div>
+
+    <!-- Section 4: Approval/Rejection Details -->
+    {% if proposal.status == "approved" or proposal.status == "executed" %}
+    <div class="card">
+        <h2>Approval</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Approved By</span>
+                <span class="detail-value">{{ proposal.approved_by }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Approved At</span>
+                <span class="detail-value">{{ proposal.approved_at[:19] | replace('T', ' ') if proposal.approved_at else '—' }} UTC</span>
+            </div>
+            {% if proposal.modifications %}
+            <div class="detail-item">
+                <span class="detail-label">Modifications</span>
+                <span class="detail-value">{{ proposal.modifications }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if proposal.status == "rejected" %}
+    <div class="card card-rejected">
+        <h2>Rejection</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <span class="detail-label">Rejected By</span>
+                <span class="detail-value">{{ proposal.rejected_by }}</span>
+            </div>
+            <div class="detail-item full-width">
+                <span class="detail-label">Reason</span>
+                <span class="detail-value">{{ proposal.rejection_reason }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if proposal.status == "blocked" %}
+    <div class="card card-blocked">
+        <h2>Blocked</h2>
+        <p class="block-message">{{ proposal.block_reason }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Section 5: Actions (only for pending) -->
+    {% if proposal.status == "pending" %}
+    <div class="card">
+        <h2>Review Actions</h2>
+        <div class="actions-container">
+            <form method="post" action="/dashboard/proposal/{{ proposal.id }}/approve" class="action-form">
+                <input type="hidden" name="reviewer" value="Almir Moura">
+                <div class="form-group">
+                    <label for="notes">Reviewer Notes (optional)</label>
+                    <textarea id="notes" name="notes" rows="2" placeholder="Optional notes..." maxlength="200"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="modified_units">Modify Units (optional)</label>
+                    <input type="number" id="modified_units" name="modified_units" placeholder="Leave blank to approve as-is" min="1">
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-approve">Approve</button>
+                </div>
+            </form>
+            <form method="post" action="/dashboard/proposal/{{ proposal.id }}/reject" class="action-form">
+                <input type="hidden" name="reviewer" value="Almir Moura">
+                <div class="form-group">
+                    <label for="reason">Rejection Reason (required)</label>
+                    <textarea id="reason" name="reason" rows="2" placeholder="Explain why this proposal is being rejected..." required maxlength="200"></textarea>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-reject">Reject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Section 6: Audit Trail -->
+    {% if audit_entries %}
+    <div class="card">
+        <h2>Audit Trail</h2>
+        <div class="timeline">
+            {% for entry in audit_entries %}
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <span class="timeline-tool">{{ tool_display_name(entry.tool_name, entry.parameters.get('action') if entry.parameters else None) }}</span>
+                        <span class="timeline-decision {{ status_class(entry.authorization_decision or '') }}">{{ entry.authorization_decision or '' }}</span>
+                    </div>
+                    <div class="timeline-meta">
+                        {{ entry.timestamp[:19] | replace('T', ' ') }} UTC &middot;
+                        {{ entry.agent_id }} &middot;
+                        {{ entry.latency_ms }}ms
+                    </div>
+                    {% if entry.result_summary %}
+                    <div class="timeline-result">{{ entry.result_summary }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

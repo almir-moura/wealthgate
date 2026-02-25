@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Activity — Wealthgate{% endblock %}
+{% block nav_audit %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Activity</h1>
+    <p class="subtitle">Reviewed orders and agent transaction history</p>
+</div>
+
+{% if resolved_proposals %}
+<h2>Reviewed Orders</h2>
+<div class="proposal-cards" style="margin-bottom: 32px;">
+    {% for p in resolved_proposals %}
+    <a href="/dashboard/proposal/{{ p.id }}" class="proposal-card">
+        <div class="proposal-card-top">
+            <div class="proposal-card-primary">
+                <div class="proposal-card-action">
+                    {% if p.action == "buy" %}
+                        <span class="action-pill action-buy">Buy</span>
+                        <span class="proposal-card-symbol">{{ p.symbol }}</span>
+                    {% elif p.action == "sell" %}
+                        <span class="action-pill action-sell">Sell</span>
+                        <span class="proposal-card-symbol">{{ p.symbol }}</span>
+                    {% elif p.action == "rebalance" %}
+                        <span class="action-pill action-rebalance">Rebalance</span>
+                    {% elif p.action == "withdraw" %}
+                        <span class="action-pill action-blocked">Withdraw</span>
+                    {% else %}
+                        <span class="action-pill">{{ p.action }}</span>
+                    {% endif %}
+                </div>
+                <div class="proposal-card-value">{{ p.estimated_value | format_value }}</div>
+            </div>
+            <div class="proposal-card-meta">
+                <div class="proposal-card-meta-row">
+                    <span class="proposal-card-meta-label">ID</span>
+                    <span class="mono">{{ p.id }}</span>
+                </div>
+                {% if p.symbol %}
+                <div class="proposal-card-meta-row">
+                    <span class="proposal-card-meta-label">Company</span>
+                    <span>{{ symbol_name(p.symbol) }}</span>
+                </div>
+                {% endif %}
+                <div class="proposal-card-meta-row">
+                    <span class="proposal-card-meta-label">Agent</span>
+                    <span>{{ p.agent_name }}</span>
+                </div>
+                <div class="proposal-card-badges">
+                    <span class="tier-badge tier-{{ p.tier }}">{{ tier_label(p.tier) }}</span>
+                    <span class="status-pill {{ status_class(p.status) }}">{{ p.status | replace('_', ' ') | capitalize }}</span>
+                </div>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2>Transaction Log</h2>
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Agent</th>
+                <th>Transaction</th>
+                <th>Parameters</th>
+                <th>Tier</th>
+                <th>Decision</th>
+                <th>Result</th>
+                <th>Latency</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+            <tr>
+                <td class="timestamp">{{ entry.timestamp[:19] | replace('T', ' ') }}</td>
+                <td>{{ entry.agent_id }}</td>
+                <td>{{ tool_display_name(entry.tool_name, entry.parameters.get('action')) }}</td>
+                <td class="params-cell">
+                    <details>
+                        <summary>View</summary>
+                        <pre class="params-json">{{ entry.parameters | tojson(indent=2) }}</pre>
+                    </details>
+                </td>
+                <td>
+                    {% if entry.authorization_tier is not none %}
+                    <span class="tier-badge tier-{{ entry.authorization_tier }}">Tier {{ entry.authorization_tier }}</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry.authorization_decision %}
+                    <span class="status-pill {{ status_class(entry.authorization_decision) }}">{{ entry.authorization_decision | replace('_', ' ') }}</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td class="result-cell">{{ entry.result_summary or '—' }}</td>
+                <td class="mono">{{ entry.latency_ms or '—' }}ms</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

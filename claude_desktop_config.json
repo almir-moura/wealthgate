@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "wealthgate": {
+      "command": "python",
+      "args": ["-m", "fastmcp", "run", "wealthgate/mcp_server.py"],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}Agent Transcript — Wealthgate{% endblock %}
+
+{% block content %}
+<div class="transcript-page">
+
+    <!-- Hero -->
+    <div class="page-header">
+        <h1>Agent Session Transcript</h1>
+        <p class="subtitle">A replay of every MCP tool call, authorisation decision, and human action across three AI agents and five proposals — showing exactly how the agent interface works.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value">3</div>
+            <div class="stat-label">AI Agents</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Proposals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">4</div>
+            <div class="stat-label">Tiers Triggered</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value stat-rejected">1</div>
+            <div class="stat-label">Blocked</div>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="transcript-timeline">
+        {% for entry in entries %}
+            {% if entry.type == "act" %}
+                <!-- Act divider -->
+                <div class="act-divider {% if entry.highlight %}act-highlight{% endif %}">
+                    <div class="act-number">Act {{ entry.act_number }}</div>
+                    <div class="act-header">
+                        <span class="agent-avatar agent-avatar-{{ entry.agent_id }}">{{ entry.agent_label[0] }}</span>
+                        <div>
+                            <h2 class="act-title">{{ entry.title }}</h2>
+                            <span class="act-agent">{{ entry.agent_label }}</span>
+                        </div>
+                    </div>
+                    <p class="act-description">{{ entry.description }}</p>
+                </div>
+            {% elif entry.type == "step" %}
+                <!-- Timeline step -->
+                <div class="transcript-step {% if entry.highlight %}transcript-highlight{% endif %}">
+                    <div class="transcript-dot tier-dot-{{ entry.tier if entry.tier is not none else 'human' }}"></div>
+                    <div class="transcript-step-inner">
+                        <div class="transcript-step-header">
+                            <span class="agent-avatar-small agent-avatar-{{ entry.agent_id }}">{{ entry.agent_label[0] }}</span>
+                            <span class="transcript-timestamp">{{ entry.timestamp[11:16] }} UTC</span>
+                            {% if entry.tier is not none %}
+                                <span class="tier-badge tier-{{ entry.tier }}">Tier {{ entry.tier }}</span>
+                            {% endif %}
+                            {% if entry.decision == "auto_approved" %}
+                                <span class="status-pill status-approved">Auto-approved</span>
+                            {% elif entry.decision == "pending_human_approval" %}
+                                <span class="status-pill status-pending">Pending Review</span>
+                            {% elif entry.decision == "pending_with_cooling" %}
+                                <span class="status-pill status-pending_with_cooling">Cooling Period</span>
+                            {% elif entry.decision == "approved" %}
+                                <span class="status-pill status-approved">Approved</span>
+                            {% elif entry.decision == "rejected" %}
+                                <span class="status-pill status-rejected">Rejected</span>
+                            {% elif entry.decision == "blocked" %}
+                                <span class="status-pill status-blocked">Blocked</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="tool-signature">{{ entry.tool_display }}</div>
+
+                        <p class="transcript-narrative">{{ entry.narrative }}</p>
+
+                        {% if entry.detail %}
+                            <p class="transcript-detail">{{ entry.detail }}</p>
+                        {% endif %}
+
+                        {% if entry.proposal_id %}
+                            <a href="/dashboard/proposal/{{ entry.proposal_id }}" class="transcript-proposal-link">View {{ entry.proposal_id }} in dashboard &rarr;</a>
+                        {% endif %}
+
+                        {% if entry.request_json or entry.response_json %}
+                            <details class="transcript-payload">
+                                <summary>View MCP Payload</summary>
+                                <div class="payload-columns">
+                                    {% if entry.request_json %}
+                                        <div class="payload-block">
+                                            <div class="payload-label">Request</div>
+                                            <pre class="params-json">{{ entry.request_json | tojson(indent=2) }}</pre>
+                                        </div>
+                                    {% endif %}
+                                    {% if entry.response_json %}
+                                        <div class="payload-block">
+                                            <div class="payload-label">Response</div>
+                                            <pre class="params-json">{{ entry.response_json | tojson(indent=2) }}</pre>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </details>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Summary card -->
+    <div class="card transcript-summary">
+        <h2>What This Demonstrates</h2>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-icon summary-icon-green">&#10003;</span>
+                <div>
+                    <strong>Tier 0 — Read-Only</strong>
+                    <p>Agents read portfolios and search investments freely. No approval needed for information gathering.</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-icon summary-icon-yellow">&#9679;</span>
+                <div>
+                    <strong>Tier 2 — Human Review</strong>
+                    <p>Trades over $100 queue for human approval. The reviewer sees full reasoning before deciding.</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-icon summary-icon-purple">&#9672;</span>
+                <div>
+                    <strong>Tier 3 — Cooling Period</strong>
+                    <p>Trades over $5,000 require a mandatory 15-minute wait. No impulsive decisions on large positions.</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <span class="summary-icon summary-icon-red">&#10007;</span>
+                <div>
+                    <strong>Tier 4 — Hard Boundary</strong>
+                    <p>Withdrawals and account modifications are permanently blocked. No agent, no override, no exception.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Rationale ──────────────────────────────────────────────── -->
+    <div class="rationale-divider"></div>
+
+    <div class="rationale-hero">
+        <h2>Rationale</h2>
+        <p class="subtitle">What this system does, where it stops, and why.</p>
+    </div>
+
+    <!-- Section 1: What the Human Can Now Do -->
+    <div class="rationale-card card">
+        <div class="rationale-label">The Unlock</div>
+        <h3>What the Human Can Now Do</h3>
+        <p>Every payments company shipped agent infrastructure in 2025 — Stripe, Visa, Mastercard, PayPal, Coinbase. No brokerage has. Wealthgate fills that gap: it makes investing programmable for AI agents the way Stripe made payments programmable for developers.</p>
+        <p>Wealthsimple clients connect their own AI agents — Claude, ChatGPT, or custom — to their investment accounts through Wealthgate. The system is the <strong>gatekeeper for vibe-investing</strong>: it catalogs every agent action and keeps the account holder in the decision loop for every material trade. Portfolio analysis, tax-loss harvesting, and rebalancing happen at machine speed — then route through an Approval Dashboard where the client reviews full agent reasoning, modifies proposals, and approves or rejects with a tap. Notification channels (push, SMS, WhatsApp) ensure time-sensitive approvals never get missed.</p>
+        <p>This is not a chatbot. AI agents don't see a UI — they call tools over MCP. Humans see the dashboard. The boundary is explicit, the way Sam Talasila described it: agent access excludes raw account data and withdrawal authority by design.</p>
+    </div>
+
+    <!-- Section 2: What AI Agents Can Do Through This System -->
+    <div class="rationale-card card">
+        <div class="rationale-label">Agent Capabilities</div>
+        <h3>What AI Agents Can Do Through This System</h3>
+        <ul class="rationale-list">
+            <li><strong>Connect via MCP protocol</strong> — agents discover and call tools over JSON-RPC, the same standard adopted by Claude, ChatGPT, Gemini, and VS Code. Multi-agent coordination is native: a financial advisor, a portfolio rebalancer, and a tax optimizer can all operate on the same account simultaneously</li>
+            <li><strong>Read portfolios</strong> with live TSX/NYSE market data — across Canadian account types (TFSA, RRSP, FHSA, Non-Registered) with contribution room awareness</li>
+            <li><strong>Propose trades</strong> with detailed reasoning chains visible in the dashboard</li>
+            <li><strong>Identify tax-loss harvesting</strong> opportunities with Canadian superficial loss rule awareness</li>
+            <li><strong>Calculate multi-trade rebalances</strong> with target allocation drift detection</li>
+            <li><strong>Search the investment universe</strong> across ETFs and stocks with live pricing</li>
+        </ul>
+        <p>Every action is logged with agent identity, parameters, authorization tier, and latency — creating the regulatory-grade audit trail required by CSA Notice 11-348 and OSFI E-23.</p>
+    </div>
+
+    <!-- Section 3: Where AI Must Stop -->
+    <div class="rationale-card card">
+        <div class="rationale-label">Boundaries</div>
+        <h3>Where AI Must Stop</h3>
+        <ul class="rationale-list">
+            <li><strong>Tier 2 ($100–$5,000):</strong> queued for account holder approval — the client sees full agent reasoning before deciding</li>
+            <li><strong>Tier 3 (over $5,000):</strong> mandatory 15-minute cooling period before the client can approve — no impulsive decisions on large positions</li>
+            <li><strong>Tier 4 (withdrawals, account modifications, closures):</strong> permanently blocked in code — no agent, no override, no exception</li>
+        </ul>
+        <pre class="rationale-code">BLOCKED_OPERATIONS = {"withdraw", "withdraw_funds", "modify_account", "close_account", "transfer"}</pre>
+        <p>These boundaries are enforced in code, not in prompts. No amount of prompt engineering can bypass a Tier 4 block — the operation simply doesn't exist in the agent's tool set.</p>
+    </div>
+
+    <!-- Section 4: The Critical Decision That Must Remain Human -->
+    <div class="rationale-card card rationale-highlight">
+        <div class="rationale-label">The Thesis Moment</div>
+        <h3>The Critical Decision That Must Remain Human</h3>
+        <p><strong>The ultimate decision about your future and your investments is still fully human — and personal — and we will make sure it stays that way.</strong></p>
+        <p>No system should dictate what you do with your money, or put you in a situation of financial stress due to unleashed infrastructure. That principle shapes every architectural decision in Wealthgate.</p>
+        <p>Here's how it works in practice. Proposal WS-2026-00004: an agent detected the S&amp;P 500 dropped 12% and proposed selling VFV.TO — a $16,230 position. The agent's own analysis showed that selling during &gt;10% drawdowns has negative expected value 73% of the time over 5-year horizons. So it did exactly what a well-designed agent should do — it flagged, it analyzed, and it deferred:</p>
+        <blockquote class="reasoning-block">
+            "I recommend human review because factors beyond my analysis include personal risk tolerance and upcoming cash needs."
+        </blockquote>
+        <p>The Approval Dashboard showed the account holder everything: the agent's reasoning, the dollar amount, the authorization tier, the historical analysis. The account holder rejected the panic-sell:</p>
+        <blockquote class="reasoning-block">
+            "Client has 30+ year horizon. Holding through volatility is the right call. Good flag by the agent."
+        </blockquote>
+        <p>This is Wealthgate's thesis in a single interaction. The agent provides analysis at machine speed. The human — who knows their life goals, their cash needs next month, their emotional state, their time horizon — makes the call. The two-way audit record captures both sides: what the agent recommended, and why the human decided differently. That's not a limitation of AI. That's the system working exactly as designed.</p>
+    </div>
+
+    <!-- Section 5: What Would Break First at Scale -->
+    <div class="rationale-card card">
+        <div class="rationale-label">Scale Risks</div>
+        <h3>What Would Break First at Scale</h3>
+        <ul class="rationale-list">
+            <li><strong>The approval queue:</strong> as more clients connect agents, the volume of Tier 2/3 proposals scales with the user base — the single-user dashboard needs team-based routing, SLA timers, and escalation paths</li>
+            <li><strong>Notification delivery:</strong> push notifications, SMS, and WhatsApp channels need reliable delivery with SLA guarantees — a delayed notification on a time-sensitive trade during market volatility creates real financial risk</li>
+            <li><strong>The database:</strong> SQLite needs to move to PostgreSQL for concurrent agent writes across thousands of accounts</li>
+            <li><strong>Auto-approval threshold calibration:</strong> the adjustable threshold on the dashboard reduces review volume, but the security tradeoff requires careful tuning per client risk profile — a one-size-fits-all ceiling doesn't work at Wealthsimple scale</li>
+        </ul>
+    </div>
+
+    <!-- Section 6: Experience & Compensation -->
+    <div class="rationale-card card">
+        <div class="rationale-label">About Me</div>
+        <h3>Experience &amp; Compensation</h3>
+        <div class="rationale-meta-grid">
+            <div>
+                <span class="rationale-meta-label">Salary Expectation</span>
+                <span class="rationale-meta-value">$160,000 – $185,000</span>
+            </div>
+            <div>
+                <span class="rationale-meta-label">AI Experience</span>
+                <span class="rationale-meta-value">Since late 2022 (GPT 3.5)</span>
+            </div>
+        </div>
+        <p>Currently developing automations, apps, agents, and MCPs. Built Wealthgate end-to-end with Claude Code — a complete working system, not a slide deck — providing meta-evidence of the AI-native development approach the role requires.</p>
+    </div>
+
+</div>
+{% endblock %}

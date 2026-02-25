@@ -1,6 +1,6 @@
-# WealthGate
+# Wealthgate
 
-**Making investing programmable for AI agents — the way Stripe made payments programmable for developers.**
+**Making investing programmable for AI agents and accessible to Humans**
 
 ## The Problem
 
@@ -8,7 +8,7 @@ Every payments company shipped agent infrastructure in 2025. No brokerage has. W
 
 ## What This Is
 
-WealthGate is an MCP (Model Context Protocol) server that exposes investment operations to any AI agent — Claude, ChatGPT, or custom agents — with tiered authorisation, human approval gates, and regulatory-grade audit trails.
+Wealthgate is an MCP (Model Context Protocol) server that exposes investment operations to any AI agent — Claude, ChatGPT, or custom agents — with tiered authorisation, human approval gates, and regulatory-grade audit trails.
 
 It has two parts:
 1. **MCP Server** (Python) — exposes investment tools that AI agents discover and call via MCP protocol
@@ -20,7 +20,7 @@ This is not a chatbot. AI agents don't see a UI. They call tools over MCP. Human
 
 ```
 ┌─────────────────┐     MCP Protocol      ┌──────────────────────┐
-│   AI Agent       │ ◄──── JSON-RPC ────► │   WealthGate MCP     │
+│   AI Agent       │ ◄──── JSON-RPC ────► │   Wealthgate MCP     │
 │ (Claude/ChatGPT) │                       │   Server             │
 └─────────────────┘                       │                      │
                                           │  Tools:              │

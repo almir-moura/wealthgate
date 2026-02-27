@@ -74,14 +74,44 @@
                 <div class="overlay-section">
                     <div class="rationale-label">Agent Capabilities</div>
                     <h3>What AI Agents Can Do Through This System</h3>
-                    <p>Agents connect via MCP protocol — the same standard adopted by Claude, ChatGPT, Gemini, and VS Code. They can read portfolios with live market data, propose trades with reasoning, identify tax-loss harvesting opportunities, calculate multi-trade rebalances, and search the investment universe. Multi-agent coordination is native: a financial advisor, a rebalancer, and a tax optimizer can all operate on the same account simultaneously.</p>
+                    <p>Agents authenticate through a Know Your Agent (KYA) registration layer — identifying their model, version, developer, and the human who authorised delegation — before accessing any tools. Every connected agent carries a verified identity that persists across sessions.</p>
+                    <p>Once verified, agents connect via MCP protocol — the same standard adopted by Claude, ChatGPT, Gemini, and VS Code. Multi-agent coordination is native: a financial advisor, a portfolio rebalancer, and a tax optimiser can all operate on the same account simultaneously, each with its own identity and audit trail.</p>
+                    <p>Agents can:</p>
+                    <ul class="overlay-list">
+                        <li>Read portfolios with live TSX/NYSE market data — across Canadian account types (TFSA, RRSP, FHSA, Non-Registered) with contribution room awareness</li>
+                        <li>Propose trades with detailed reasoning chains visible in the dashboard</li>
+                        <li>Identify tax-loss harvesting opportunities with Canadian superficial loss rule awareness</li>
+                        <li>Calculate multi-trade rebalances with target allocation drift detection</li>
+                        <li>Search the investment universe across ETFs and stocks with live pricing</li>
+                    </ul>
+                    <p>Every action is logged with agent identity, parameters, authorisation tier, and latency — creating the regulatory-grade audit trail required by CSA Notice 11-348 and OSFI E-23.</p>
                 </div>
 
                 <!-- Section 3 -->
                 <div class="overlay-section">
                     <div class="rationale-label">Boundaries</div>
                     <h3>Where AI Must Stop</h3>
-                    <p><strong>Tier 2</strong> ($100–$5,000) queues for account holder approval. <strong>Tier 3</strong> (over $5,000) adds a mandatory 15-minute cooling period. <strong>Tier 4</strong> (withdrawals, account modifications, closures) is permanently blocked in code — no agent, no override, no exception. These boundaries are enforced in code, not in prompts.</p>
+                    <p>Wealthgate enforces authorisation through a dynamic risk scoring engine that evaluates trade value, agent trust score, behavioural deviation, and market context. The engine maps every operation to one of four tiers:</p>
+                    <ul class="overlay-list">
+                        <li><strong>Tier 1 (under $100):</strong> Auto-approved and logged. Low-value operations proceed without friction, but every action is recorded.</li>
+                        <li><strong>Tier 2 ($100–$5,000):</strong> Queued for account holder approval — the client sees full agent reasoning before deciding.</li>
+                        <li><strong>Tier 3 (over $5,000):</strong> Mandatory 15-minute cooling period before the client can approve — no impulsive decisions on large positions.</li>
+                        <li><strong>Tier 4 (withdrawals, account modifications, closures):</strong> Permanently blocked in code — no agent, no override, no exception.</li>
+                    </ul>
+                    <pre class="overlay-code">BLOCKED_OPERATIONS = {"withdraw", "withdraw_funds", "modify_account", "close_account", "transfer"}</pre>
+                    <p>These boundaries are enforced in code, not in prompts. No amount of prompt engineering can bypass a Tier 4 block — the operation simply doesn't exist in the agent's tool set.</p>
+                    <p>Agent trust scores evolve over time: a newly connected agent starts with elevated review requirements. An agent with a track record of approved proposals earns faster processing on low-risk operations. An agent whose proposals are consistently rejected sees its trust score decline. The system learns which agents to trust — and which to scrutinise.</p>
+                </div>
+
+                <!-- Section 3b — Trust Architecture -->
+                <div class="overlay-section">
+                    <div class="rationale-label">Trust Architecture</div>
+                    <h3>How the System Verifies, Traces, and Attributes</h3>
+                    <p>Wealthgate's compliance layer is designed around four principles drawn from emerging agent trust standards — specifically the KYA (Know Your Agent) framework and reasoning trace verification patterns now being adopted across institutional finance.</p>
+                    <p><strong>Agent Identity (KYA)</strong> Every agent registers with verified credentials before accessing tools: model name and version, developer identity, the human who authorised delegation, and the scope of permitted operations. The dashboard displays each agent's full identity chain — not just "Claude" but which Claude, deployed by whom, authorised by which account holder, with what permissions.</p>
+                    <p><strong>Reasoning Trace Capture</strong> Every proposal includes the agent's full reasoning chain — not just a summary, but the sequence of tool calls that led to the decision. When an agent reads a portfolio, searches investments, and proposes a trade, the entire chain is captured and linked. The dashboard renders this as a visual trace: what the agent saw, in what order, and what conclusion it drew. This is the evidence layer that transforms "we logged it" into "we can prove why it happened."</p>
+                    <p><strong>Behavioural Anomaly Detection</strong> The risk engine monitors agent behaviour against historical patterns. An agent that normally proposes conservative ETF purchases but suddenly recommends selling $16,000 in equity exposure triggers an elevated review — not because of the dollar amount alone, but because the behaviour deviates from the agent's established pattern. PROP-00004 (the rejected panic-sell) demonstrates this principle: the system flagged the proposal not just on value, but on behavioural deviation.</p>
+                    <p><strong>Liability Attribution</strong> For any proposal, the system produces a complete evidence package: verified agent identity, full reasoning trace, authorisation chain (who delegated, what scope, when), the human decision (approve/reject with notes), and timestamps at every step. This creates clear liability boundaries — if a trade is disputed, the record shows exactly what the agent reasoned, what the human saw, and who made the final call. This is the audit standard that CSA Notice 11-348's "appropriate degree of explainability" and OSFI E-23's model risk management requirements point toward.</p>
                 </div>
 
                 <!-- Section 4 — The Thesis -->
@@ -96,7 +126,14 @@
                 <div class="overlay-section">
                     <div class="rationale-label">Scale Risks</div>
                     <h3>What Would Break First at Scale</h3>
-                    <p>The approval queue becomes the bottleneck as clients connect agents at scale. Notification delivery (push, SMS, WhatsApp) needs SLA guarantees. SQLite needs PostgreSQL for concurrent writes. The auto-approval threshold needs per-client calibration.</p>
+                    <ul class="overlay-list">
+                        <li><strong>The approval queue:</strong> As more clients connect agents, the volume of Tier 2/3 proposals scales with the user base — the single-user dashboard needs team-based routing, SLA timers, and escalation paths.</li>
+                        <li><strong>Notification delivery:</strong> Push notifications, SMS, and WhatsApp channels need reliable delivery with SLA guarantees — a delayed notification on a time-sensitive trade during market volatility creates real financial risk.</li>
+                        <li><strong>The database:</strong> SQLite needs to move to PostgreSQL for concurrent agent writes across thousands of accounts.</li>
+                        <li><strong>Auto-approval calibration:</strong> Static tier thresholds need per-client calibration based on risk profile, portfolio size, and stated preferences — a one-size-fits-all ceiling doesn't work at Wealthsimple scale.</li>
+                        <li><strong>KYA at scale:</strong> Agent registration needs integration with a centralised identity provider as the number of agent developers grows — the current prototype handles identity at the session level; production requires persistent, revocable credentials.</li>
+                        <li><strong>Reasoning trace storage:</strong> Full trace capture generates significant data volume. Production deployment needs efficient storage, indexing, and retrieval — likely a dedicated trace database separate from the operational DB.</li>
+                    </ul>
                 </div>
 
                 <!-- Lightning hint -->
